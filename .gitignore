@@ -1,0 +1,40 @@
+# Ignore vendor directory (Composer dependencies)
+vendor/
+
+# Ignore node_modules directory (NPM dependencies)
+node_modules/
+
+# Ignore Laravel environment files
+.env
+.env.local
+.env.production
+
+# Ignore storage, logs, and cache files
+/storage/
+/bootstrap/cache/
+/storage/*
+
+# Ignore Composer lock file (optional)
+composer.lock
+
+# Ignore IDE or editor-specific files
+.idea/
+.vscode/
+.DS_Store
+
+# Ignore Nginx or other web server configuration files if not needed
+nginx.conf
+
+# Ignore Docker and Jenkins configuration files if not needed
+Dockerfile
+docker-compose.yml
+Jenkinsfile
+
+# Ignore SQL dump files
+*.sql
+
+# Ignore any temporary files or build artifacts
+*.log
+*.bak
+*.swp
+
