@@ -16,6 +16,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Build the Docker image using the Dockerfile
                     docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                 }
             }
@@ -24,7 +25,8 @@ pipeline {
         stage('Run Docker Containers') {
             steps {
                 script {
-                    docker-compose -f docker-compose.yml up -d
+                    // Use the sh step to run docker-compose
+                    sh 'docker-compose -f docker-compose.yml up -d'
                 }
             }
         }
@@ -33,6 +35,7 @@ pipeline {
             steps {
                 script {
                     // Add deployment steps here (e.g., copy to production server)
+                    // You can use SCP, rsync, or other tools to deploy the image to a server if required
                 }
             }
         }
@@ -40,7 +43,8 @@ pipeline {
         stage('Clean Up') {
             steps {
                 script {
-                    docker-compose down
+                    // Use the sh step to stop and remove the containers
+                    sh 'docker-compose down'
                 }
             }
         }
@@ -48,7 +52,7 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            cleanWs() // Clean workspace after the build
         }
     }
 }
