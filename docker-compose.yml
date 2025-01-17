@@ -20,8 +20,10 @@ services:
       - handyman_network
     depends_on:
       - db
+    expose:
+      - 9000  # Expose port 9000 to communicate with Nginx
     ports:
-      - 80:80
+      - 9000:9000  # Mapping app port
 
   db:
     image: mysql:8.0
@@ -40,12 +42,12 @@ services:
     image: nginx:latest
     container_name: handyman_nginx
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - .:/var/www
-      - /etc/letsencrypt/live/pipeline.iqonic.design:/etc/nginx/ssl
+      - ./nginx.conf:/etc/nginx/nginx.conf  # Ensure this points to your custom Nginx config
+      - .:/var/www  # Mount the application code
+      - /etc/letsencrypt/live/pipeline.iqonic.design:/etc/nginx/ssl  # Mount Let's Encrypt certificates
     ports:
-      - 443:443
-      - 8080:80
+      - 443:443  # Expose SSL port
+      - 80:80  # Expose HTTP port
     networks:
       - handyman_network
     depends_on:
