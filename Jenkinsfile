@@ -1,73 +1,61 @@
-pipeline {
-    agent any
+version: '3.8'
 
-    environment {
-        DOCKER_IMAGE = 'handyman_service_web_image'
-        DOCKER_TAG = 'latest'
-        SSL_CERT_DIR = '/etc/letsencrypt/live/pipeline.iqonic.design' // Define SSL certificate location
-        DOMAIN = 'pipeline.iqonic.design' // Your domain name
-    }
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: handyman_app
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=pipeline
+      - DB_USERNAME=pipeline
+      - DB_PASSWORD=pipeline@1210
+    networks:
+      - handyman_network
+    depends_on:
+      - db
+    ports:
+      - 80:80
 
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
+  db:
+    image: mysql:8.0
+    container_name: handyman_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: pipeline
+      MYSQL_USER: pipeline
+      MYSQL_PASSWORD: pipeline@1210
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - handyman_network
 
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
-                }
-            }
-        }
+  nginx:
+    image: nginx:latest
+    container_name: handyman_nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - .:/var/www
+      - /etc/letsencrypt/live/pipeline.iqonic.design:/etc/nginx/ssl
+    ports:
+      - 443:443
+      - 8080:80
+    networks:
+      - handyman_network
+    depends_on:
+      - app
 
-        stage('Copy SSL Certificates') {
-            steps {
-                script {
-                    // Ensure SSL certificates are available to the Docker container
-                    sh '''
-                        mkdir -p ./nginx/ssl
-                        cp ${SSL_CERT_DIR}/fullchain.pem ./nginx/ssl/fullchain.pem
-                        cp ${SSL_CERT_DIR}/privkey.pem ./nginx/ssl/privkey.pem
-                    '''
-                }
-            }
-        }
+networks:
+  handyman_network:
+    driver: bridge
 
-        stage('Run Docker Containers') {
-            steps {
-                script {
-                    // Run docker-compose to start containers (app, nginx, db)
-                    sh 'docker-compose -f docker-compose.yml up -d'
-                }
-            }
-        }
+volumes:
+  db_data:
 
-        stage('Deploy to Server') {
-            steps {
-                script {
-                    // Add deployment steps here, such as copying files to a remote server
-                    echo 'Deployment steps go here'
-                }
-            }
-        }
-
-        stage('Clean Up') {
-            steps {
-                script {
-                    // Shut down the containers after deployment (optional)
-                    sh 'docker-compose down'
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
-        }
-    }
-}
 
