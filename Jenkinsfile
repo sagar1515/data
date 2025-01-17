@@ -4,6 +4,8 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'handyman_service_web_image'
         DOCKER_TAG = 'latest'
+        SSL_CERT_DIR = '/etc/letsencrypt/live/pipeline.iqonic.design' // Define SSL certificate location
+        DOMAIN = 'pipeline.iqonic.design' // Your domain name
     }
 
     stages {
@@ -16,8 +18,20 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image using the Dockerfile
                     docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                }
+            }
+        }
+
+        stage('Copy SSL Certificates') {
+            steps {
+                script {
+                    // Ensure SSL certificates are available to the Docker container
+                    sh '''
+                        mkdir -p ./nginx/ssl
+                        cp ${SSL_CERT_DIR}/fullchain.pem ./nginx/ssl/fullchain.pem
+                        cp ${SSL_CERT_DIR}/privkey.pem ./nginx/ssl/privkey.pem
+                    '''
                 }
             }
         }
@@ -25,7 +39,7 @@ pipeline {
         stage('Run Docker Containers') {
             steps {
                 script {
-                    // Use the sh step to run docker-compose
+                    // Run docker-compose to start containers (app, nginx, db)
                     sh 'docker-compose -f docker-compose.yml up -d'
                 }
             }
@@ -34,8 +48,8 @@ pipeline {
         stage('Deploy to Server') {
             steps {
                 script {
-                    // Add deployment steps here (e.g., copy to production server)
-                    // You can use SCP, rsync, or other tools to deploy the image to a server if required
+                    // Add deployment steps here, such as copying files to a remote server
+                    echo 'Deployment steps go here'
                 }
             }
         }
@@ -43,7 +57,7 @@ pipeline {
         stage('Clean Up') {
             steps {
                 script {
-                    // Use the sh step to stop and remove the containers
+                    // Shut down the containers after deployment (optional)
                     sh 'docker-compose down'
                 }
             }
@@ -52,7 +66,7 @@ pipeline {
 
     post {
         always {
-            cleanWs() // Clean workspace after the build
+            cleanWs()
         }
     }
 }
