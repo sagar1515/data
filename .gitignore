@@ -22,14 +22,6 @@ composer.lock
 .vscode/
 .DS_Store
 
-# Ignore Nginx or other web server configuration files if not needed
-nginx.conf
-
-# Ignore Docker and Jenkins configuration files if not needed
-Dockerfile
-docker-compose.yml
-Jenkinsfile
-
 # Ignore SQL dump files
 *.sql
 

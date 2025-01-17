@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: handyman_app
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=pipeline
+      - DB_USERNAME=pipeline
+      - DB_PASSWORD=pipeline@1210
+    networks:
+      - handyman_network
+    depends_on:
+      - db
+    ports:
+      - 80:80
+
+  db:
+    image: mysql:8.0
+    container_name: handyman_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: pipeline
+      MYSQL_USER: pipeline
+      MYSQL_PASSWORD: pipeline@1210
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - handyman_network
+
+  nginx:
+    image: nginx:latest
+    container_name: handyman_nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - .:/var/www
+    ports:
+      - 8080:80
+    networks:
+      - handyman_network
+    depends_on:
+      - app
+
+networks:
+  handyman_network:
+    driver: bridge
+
+volumes:
+  db_data:
+
