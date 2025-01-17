@@ -1,61 +1,64 @@
-version: '3.8'
+pipeline {
+    agent any
 
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: handyman_app
-    working_dir: /var/www
-    volumes:
-      - .:/var/www
-    environment:
-      - DB_CONNECTION=mysql
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_DATABASE=pipeline
-      - DB_USERNAME=pipeline
-      - DB_PASSWORD=pipeline@1210
-    networks:
-      - handyman_network
-    depends_on:
-      - db
-    ports:
-      - 80:80
+    environment {
+        DOCKER_IMAGE = 'handyman_service_web_image'
+        DOCKER_TAG = 'latest'
+        DOCKER_COMPOSE = '/usr/local/bin/docker-compose'  // Path to your docker-compose
+    }
 
-  db:
-    image: mysql:8.0
-    container_name: handyman_db
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: pipeline
-      MYSQL_USER: pipeline
-      MYSQL_PASSWORD: pipeline@1210
-    volumes:
-      - db_data:/var/lib/mysql
-    networks:
-      - handyman_network
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
-  nginx:
-    image: nginx:latest
-    container_name: handyman_nginx
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - .:/var/www
-      - /etc/letsencrypt/live/pipeline.iqonic.design:/etc/nginx/ssl
-    ports:
-      - 443:443
-      - 8080:80
-    networks:
-      - handyman_network
-    depends_on:
-      - app
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                }
+            }
+        }
 
-networks:
-  handyman_network:
-    driver: bridge
+        stage('Run Docker Containers') {
+            steps {
+                script {
+                    // Use Docker Compose to bring up containers (app, db, and nginx)
+                    sh """
+                        ${DOCKER_COMPOSE} -f docker-compose.yml up -d
+                    """
+                }
+            }
+        }
 
-volumes:
-  db_data:
+        stage('Deploy to Server') {
+            steps {
+                script {
+                    // Here you can add commands to deploy your app to production server if needed
+                    echo 'Deployment steps can be added here.'
+                }
+            }
+        }
+
+        stage('Clean Up') {
+            steps {
+                script {
+                    // Bring down containers after deployment
+                    sh """
+                        ${DOCKER_COMPOSE} down
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
 
 
